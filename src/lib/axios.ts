@@ -1,29 +1,22 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
-import {
-  getAccessTokenFromLocalStorage,
-  getRefreshTokenFromLocalStorage,
-  isClient,
-  refreshAccessToken,
-} from "./utils";
+import { isClient, refreshAccessToken } from "./utils";
 import { jwtDecode } from "jwt-decode";
+import { useAuthStore } from "@/store";
 
 const UNAUTHORIZED_STATUS_CODE = 401;
 const TOKEN_REFRESH_IN_MINUTES = 8;
 const baseURL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_URL;
 
-let isRefreshing = false;
-
 const clearAuthAndRedirect = () => {
   if (isClient) {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    const { clearAuth } = useAuthStore.getState();
+    clearAuth();
     window.location.href = "/login";
   }
 };
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL,
-  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,8 +24,8 @@ const axiosInstance: AxiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   async (config) => {
-    const accessToken = getAccessTokenFromLocalStorage();
-    const refreshToken = getRefreshTokenFromLocalStorage();
+    if (!isClient) return config;
+    const { accessToken, refreshToken, setTokens } = useAuthStore.getState();
 
     if (accessToken) {
       try {
@@ -55,8 +48,15 @@ axiosInstance.interceptors.request.use(
           if (refreshToken) {
             try {
               console.log("Refreshingg");
-              const newAccessToken = await refreshAccessToken();
+              const newTokens = await refreshAccessToken(refreshToken);
+
+              if (!newTokens) throw new Error();
+              const {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken,
+              } = newTokens;
               config.headers.Authorization = `Bearer ${newAccessToken}`;
+              setTokens(newAccessToken, newRefreshToken);
             } catch (error) {
               console.error("Token refresh failed:", error);
               clearAuthAndRedirect();
@@ -88,20 +88,22 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config;
+    const { refreshToken, setTokens } = useAuthStore.getState();
 
     if (
       error.response?.status === UNAUTHORIZED_STATUS_CODE &&
       originalRequest
     ) {
-      isRefreshing = true;
       try {
-        const newAccessToken = await refreshAccessToken();
-        isRefreshing = false;
+        const newTokens = await refreshAccessToken(refreshToken);
 
-        if (newAccessToken) {
+        if (newTokens) {
+          setTokens(newTokens.accessToken, newTokens.refreshToken);
+
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
           }
+
           return axiosInstance(originalRequest);
         } else {
           clearAuthAndRedirect();
@@ -109,6 +111,8 @@ axiosInstance.interceptors.response.use(
         }
       } catch (refreshError) {
         clearAuthAndRedirect();
+        console.log({ refreshError });
+
         return Promise.reject(refreshError);
       }
     }

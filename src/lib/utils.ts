@@ -20,29 +20,24 @@ export const normalizePath = (path: string) => {
   return path.startsWith("/") ? path.slice(1) : path;
 };
 
-export const refreshAccessToken = async () => {
-  const refreshToken = getRefreshTokenFromLocalStorage();
-
+export const refreshAccessToken = async (refreshToken: string | null) => {
   if (!refreshToken) return null;
 
   try {
     const res = await axios.post<{
       accessToken: string;
-      resfreshToken: string;
+      refreshToken: string;
     }>(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
       refreshToken,
+      expiresInMins: process.env.NEXT_PUBLIC_TOKEN_EXPIRE_IN_MINS,
     });
 
-    if (res.data.accessToken)
-      localStorage.setItem("accessToken", res.data.accessToken);
+    if (!res.data.accessToken) return null;
+    if (!res.data.refreshToken) return null;
 
-    if (res.data.resfreshToken)
-      localStorage.setItem("refreshToken", res.data.resfreshToken);
-
-    return res.data.accessToken;
+    return res.data;
   } catch (error) {
     console.error("Refresh token failed", error);
-
     return null;
   }
 };
