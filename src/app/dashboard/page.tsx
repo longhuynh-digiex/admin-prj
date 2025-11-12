@@ -8,6 +8,7 @@ function Dashboard() {
   const { clearAuth } = useAuthStore.getState();
   const handleLogout = () => {
     clearAuth();
+    window.location.href = "/login";
   };
   return (
     <div>
