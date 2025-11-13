@@ -1,7 +1,7 @@
 import z from "zod";
-import { UserSchema } from "./auth.dto";
+import { AuthUserSchema } from "./auth.dto";
 
-export const LoginResponseSchema = UserSchema.extend({
+export const LoginResponseSchema = AuthUserSchema.extend({
   accessToken: z.string(),
   refreshToken: z.string(),
 });

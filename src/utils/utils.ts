@@ -33,6 +33,7 @@ export const refreshAccessToken = async (refreshToken: string | null) => {
     });
 
     if (!res.data.accessToken) return null;
+
     if (!res.data.refreshToken) return null;
 
     return res.data;

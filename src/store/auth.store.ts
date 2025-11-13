@@ -1,14 +1,14 @@
-import { TUser } from "@/dtos/auth/auth.dto";
+import { TAuthUser } from "@/dtos/auth/auth.dto";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 type AuthState = {
-  user: TUser | null;
+  user: TAuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
 
-  setUser: (user: TUser | null) => void;
+  setUser: (user: TAuthUser | null) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearAuth: () => void;
 };

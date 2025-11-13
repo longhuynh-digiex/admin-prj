@@ -13,7 +13,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -53,7 +53,9 @@ export function LoginForm({
     } catch (error: any) {
       console.log({ error });
 
-      form.setError("root", { message: error.response.data.message });
+      form.setError("root", {
+        message: error.response?.data?.message || "hehe",
+      });
     }
   };
   return (

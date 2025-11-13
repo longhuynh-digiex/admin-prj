@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
-import { isClient, refreshAccessToken } from "./utils";
+import { isClient, refreshAccessToken } from "../utils/utils";
 import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from "@/store";
 

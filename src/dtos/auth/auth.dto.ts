@@ -1,7 +1,7 @@
 import z from "zod";
 
-export const UserSchema = z.object({
-  id: z.bigint().or(z.string()),
+export const AuthUserSchema = z.object({
+  id: z.number(),
   username: z.string(),
   email: z.email().optional(),
   firstName: z.string().optional(),
@@ -11,4 +11,4 @@ export const UserSchema = z.object({
   role: z.string().optional(),
 });
 
-export type TUser = z.infer<typeof UserSchema>;
+export type TAuthUser = z.infer<typeof AuthUserSchema>;
