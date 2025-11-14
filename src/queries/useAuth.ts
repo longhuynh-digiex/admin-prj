@@ -7,10 +7,3 @@ export const useLoginMutation = () => {
     mutationFn: (body: LoginRequestDTO) => AuthService.login(body),
   });
 };
-
-export const useGetMeQuery = () => {
-  return useQuery({
-    queryKey: ["account-me"],
-    queryFn: AuthService.getMe,
-  });
-};

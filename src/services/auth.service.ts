@@ -1,26 +1,21 @@
 import { LoginRequestDTO } from "@/dtos/auth/auth.request.dto";
 import { LoginResponseDTO } from "@/dtos/auth/auth.response.dto";
 import { HttpService } from "./http/http.service";
+import { AUTH_BASE_URL, LOGIN_ENDPOINT } from "@/constant/auth.endpoint";
 
-const BASE_URL = "auth";
-type hehe = LoginRequestDTO & { expiresInMins: number };
 class AuthServiceBase {
   private client;
-  protected readonly basePath = "/user";
+  protected readonly basePath = AUTH_BASE_URL;
 
   constructor() {
     this.client = new HttpService();
   }
 
   public login(body: LoginRequestDTO) {
-    return this.client.post<hehe, LoginResponseDTO>("/user/login", {
+    const fullUrl = `${this.basePath}/${LOGIN_ENDPOINT}`;
+    return this.client.post<LoginRequestDTO, LoginResponseDTO>(fullUrl, {
       ...body,
-      expiresInMins: 1,
     });
-  }
-
-  async getMe() {
-    return this.client.get<LoginResponseDTO>(`/${BASE_URL}/me`);
   }
 }
 
