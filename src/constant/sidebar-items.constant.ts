@@ -30,23 +30,6 @@ export const ADMIN_SIDEBAR_ITEMS = {
       icon: IconUsers,
     },
   ],
-  // navSecondary: [
-  //   {
-  //     title: "Settings",
-  //     url: "#",
-  //     icon: IconSettings,
-  //   },
-  //   {
-  //     title: "Get Help",
-  //     url: "#",
-  //     icon: IconHelp,
-  //   },
-  //   {
-  //     title: "Search",
-  //     url: "#",
-  //     icon: IconSearch,
-  //   },
-  // ],
 };
 export const MODERATOR_SIDEBAR_ITEMS = {
   user: {
@@ -71,21 +54,4 @@ export const MODERATOR_SIDEBAR_ITEMS = {
       icon: IconUsers,
     },
   ],
-  // navSecondary: [
-  //   {
-  //     title: "Settings",
-  //     url: "#",
-  //     icon: IconSettings,
-  //   },
-  //   {
-  //     title: "Get Help",
-  //     url: "#",
-  //     icon: IconHelp,
-  //   },
-  //   {
-  //     title: "Search",
-  //     url: "#",
-  //     icon: IconSearch,
-  //   },
-  // ],
 };
