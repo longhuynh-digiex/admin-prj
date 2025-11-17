@@ -35,7 +35,6 @@ export function ChartAreaInteractive({
 }) {
   const isGrowth = useMemo(() => {
     if (!chartData) return;
-    console.log({ chartData });
     return (
       Number(chartData[chartData.length - 1].month) >
       Number(chartData[chartData.length - 2].month)

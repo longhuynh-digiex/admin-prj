@@ -41,7 +41,6 @@ export async function POST(request: Request) {
         },
       }
     );
-    console.log({ user });
 
     if (user.role) {
       cookieStore.set("role", user.role, {

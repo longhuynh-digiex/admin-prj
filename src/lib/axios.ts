@@ -49,7 +49,6 @@ axiosInstance.interceptors.request.use(
         ) {
           if (refreshToken) {
             try {
-              console.log("Refreshingg");
               const newTokens = await refreshAccessToken(refreshToken);
 
               if (!newTokens) throw new Error();

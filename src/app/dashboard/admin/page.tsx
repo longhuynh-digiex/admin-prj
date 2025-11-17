@@ -12,8 +12,6 @@ export default function Page() {
   }
   if (isPending) return;
   if (isSuccess) {
-    console.log(data);
-
     return (
       <>
         <SectionCards

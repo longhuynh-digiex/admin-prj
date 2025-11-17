@@ -20,8 +20,6 @@ export async function proxy(request: NextRequest) {
     PRIVATE_PATHS.some((path) => pathName.startsWith(path)) &&
     !refreshToken
   ) {
-    console.log("not login");
-
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

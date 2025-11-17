@@ -73,7 +73,7 @@ function UserTable() {
         <Input
           value={queryString}
           onChange={(e) => setQueryString(e.target.value)}
-          placeholder='Search'
+          placeholder='Search User'
         />
       </div>
       {isPending && (
