@@ -2,16 +2,18 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import { isClient, refreshAccessToken } from "../utils/utils";
 import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from "@/store";
+import { LOGIN_ROUTE } from "@/constant/route.constant";
+import { NEXT_PUBLIC_API_URL, NEXT_PUBLIC_URL } from "@/constant/env.constant";
 
 const UNAUTHORIZED_STATUS_CODE = 401;
 const TOKEN_REFRESH_IN_MINUTES = 8;
-const baseURL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_URL;
+const baseURL = NEXT_PUBLIC_API_URL || NEXT_PUBLIC_URL;
 
 const clearAuthAndRedirect = () => {
   if (isClient) {
     const { clearAuth } = useAuthStore.getState();
     clearAuth();
-    window.location.href = "/login";
+    window.location.href = LOGIN_ROUTE;
   }
 };
 

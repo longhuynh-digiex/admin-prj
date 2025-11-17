@@ -1,117 +1,138 @@
 "use client";
-import { useGetUsers } from "@/queries/useUser";
-import { DataTable, DragHandle } from "./data-table";
-import { ColumnDef } from "@tanstack/react-table";
-import { TUser } from "@/dtos/user/user.dto";
-import { Badge } from "./ui/badge";
-import Image from "next/image";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Button } from "./ui/button";
-import { IconDotsVertical } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getUserTableColumns } from "@/constant/user-table-data";
+import { TUser } from "@/dtos/user/user.dto";
+import useDebounce from "@/hooks/use-debounce";
+import { useDeleteUser, useGetUsers } from "@/queries/useUser";
+import { LoaderCircle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { DataTable } from "./data-table";
+import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
 
-const columns: ColumnDef<TUser>[] = [
-  {
-    id: "drag",
-    header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
-  },
-  {
-    accessorKey: "username",
-    header: "User Name",
-    cell: ({ row }) => {
-      return <div>{row.original.username}</div>;
-    },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "image",
-    header: "Image",
-    cell: ({ row }) => (
-      <Image
-        src={row.original.image!}
-        width={60}
-        height={60}
-        alt='image'
-      />
-    ),
-  },
-  {
-    accessorKey: "age",
-    header: "Age",
-    cell: ({ row }) => (
-      <div className='w-32'>
-        <div className='text-muted-foreground px-1.5'>{row.original.age}</div>
-      </div>
-    ),
-  },
-
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant='ghost'
-            className='data-[state=open]:bg-muted text-muted-foreground flex size-8'
-            size='icon'
-          >
-            <IconDotsVertical />
-            <span className='sr-only'>Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align='end'
-          className='w-32'
-        >
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant='destructive'>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-];
 function UserTable() {
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const { refetch, data, isPending, isError, error, isSuccess } = useGetUsers(
+  const [pageSize, setPageSize] = useState(5);
+  const [queryString, setQueryString] = useState("");
+  const [userToDelete, setUserToDelete] = useState<TUser | null>(null);
+  const debounceQuery = useDebounce(queryString, 600);
+  const { data, isError, error, isSuccess, isPending } = useGetUsers(
     pageIndex,
-    pageSize
+    pageSize,
+    debounceQuery
   );
+  const deleteUserMutation = useDeleteUser();
 
-  console.log({
-    data,
-  });
-
-  const handlePageChange = (pageIndex: number, pageSize: number) => {
-    setPageIndex(pageIndex);
-    setPageSize(pageSize);
+  const handlePageChange = (newPageIndex: number, newPageSize: number) => {
+    setPageIndex(newPageIndex);
+    setPageSize(newPageSize);
   };
-  useEffect(() => {
-    refetch();
-  }, [pageIndex, pageSize]);
-  if (isPending) return null;
+
+  const handleDeleteClick = (user: TUser) => {
+    setUserToDelete(user);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.id.toString());
+      toast.success("User deleted", {
+        description: `${userToDelete.username} has been deleted successfully.`,
+      });
+      setUserToDelete(null);
+    } catch (error: any) {
+      toast.error("Delete failed", {
+        description:
+          error?.message || "Failed to delete user. Please try again.",
+      });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setUserToDelete(null);
+  };
+
+  const columns = getUserTableColumns({ onDeleteClick: handleDeleteClick });
+
   if (isError) return <div>{error.message}</div>;
+
   return (
-    isSuccess && (
-      <DataTable
-        data={data.data.users}
-        columns={columns}
-        total={data.data.total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-      />
-    )
+    <>
+      <div className=''>
+        <Input
+          value={queryString}
+          onChange={(e) => setQueryString(e.target.value)}
+          placeholder='Search'
+        />
+      </div>
+      {isPending && (
+        <div>
+          <div className='flex items-center justify-between mb-4'>
+            <div className='flex items-center gap-2'>
+              <Skeleton className='h-8 w-[200px] rounded-md gap-1.5 px-3 has-[>svg]:px-2.5'></Skeleton>
+            </div>
+          </div>
+          <Skeleton className='w-full h-10' />
+        </div>
+      )}
+      {isSuccess && (
+        <DataTable
+          data={data.data.users}
+          columns={columns}
+          total={data.data.total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+        />
+      )}
+
+      <AlertDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && handleCancelDelete()}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the user{" "}
+              <span className='font-semibold text-foreground'>
+                {userToDelete?.username}
+              </span>
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleCancelDelete}
+              disabled={deleteUserMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteUserMutation.isPending}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {deleteUserMutation.isPending && (
+                <LoaderCircle className='animate-spin' />
+              )}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

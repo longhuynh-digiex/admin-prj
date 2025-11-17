@@ -13,26 +13,29 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/utils/utils";
+import { useLoginMutation } from "@/queries/useAuth";
+import { cn, getRouteByRole } from "@/utils/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "./ui/button";
-import { useLoginMutation } from "@/queries/useAuth";
-import { AxiosError } from "axios";
-import { toast } from "sonner";
-import { redirect, useRouter } from "next/navigation";
-import { LoaderCircle } from "lucide-react";
+
 import { LoginRequestSchema } from "@/dtos/auth/auth.request.dto";
 import { useAuthStore } from "@/store";
+import { LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useGetMe } from "@/queries/useUser";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const loginMutation = useLoginMutation();
-  const { setTokens } = useAuthStore.getState();
+  const getMeQuery = useGetMe();
+  const { setTokens, setUser } = useAuthStore.getState();
   const router = useRouter();
+
   const form = useForm<z.infer<typeof LoginRequestSchema>>({
     resolver: zodResolver(LoginRequestSchema),
     defaultValues: {
@@ -40,24 +43,28 @@ export function LoginForm({
       password: "emilyspass",
     },
   });
+
   const onSubmit = async (data: z.infer<typeof LoginRequestSchema>) => {
     try {
-      console.log({ data });
       const res = await loginMutation.mutateAsync(data);
+
       toast.success("Login successfully", {
         description: `Welcome ${res.data.username}`,
       });
-      setTokens(res.data.accessToken, res.data.refreshToken);
 
-      router.push("/dashboard");
+      setTokens(res.data.accessToken, res.data.refreshToken);
+      const user = await getMeQuery.refetch();
+      setUser(user.data?.data!);
+      router.refresh();
     } catch (error: any) {
       console.log({ error });
 
       form.setError("root", {
-        message: error.response?.data?.message || "hehe",
+        message: error.response?.data?.message || error.message,
       });
     }
   };
+
   return (
     <div
       className={cn("flex flex-col gap-6", className)}

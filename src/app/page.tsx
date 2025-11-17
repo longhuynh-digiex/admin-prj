@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { LOGIN_ROUTE } from "@/constant/route.constant";
 
 import { redirect } from "next/navigation";
 
@@ -8,7 +9,7 @@ export default function Home() {
     <div className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
       <Button
         className='cursor-pointer'
-        onClick={() => redirect("/login")}
+        onClick={() => redirect(LOGIN_ROUTE)}
       >
         Go to Login
       </Button>

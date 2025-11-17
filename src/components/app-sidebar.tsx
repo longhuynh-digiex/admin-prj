@@ -1,25 +1,5 @@
 "use client";
 
-import * as React from "react";
-import {
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-} from "@tabler/icons-react";
-
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -33,50 +13,41 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import ThemeToggle from "./theme-toggle";
-
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: IconDashboard,
-    },
-    {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: IconChartBar,
-    },
-    {
-      title: "Team",
-      url: "/dashboard/team",
-      icon: IconUsers,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
+import { useAuthStore } from "@/store";
+import { ForwardRefExoticComponent, RefAttributes, useMemo } from "react";
+import { ROLES } from "@/constant/roles.constant";
+import {
+  ADMIN_SIDEBAR_ITEMS,
+  MODERATOR_SIDEBAR_ITEMS,
+} from "@/constant/sidebar-items.constant";
+import { Icon, IconProps } from "@tabler/icons-react";
+type TNavItem = {
+  title: string;
+  url: string;
+  icon: ForwardRefExoticComponent<IconProps & RefAttributes<Icon>>;
 };
 
+type TNavItems = {
+  navMain: TNavItem[];
+  navSecondary?: TNavItem[];
+};
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuthStore();
+  const userRole: TNavItems | undefined = useMemo(() => {
+    if (!user?.role) return;
+
+    switch (user.role) {
+      case ROLES.Admin:
+        return ADMIN_SIDEBAR_ITEMS;
+      case ROLES.Moderator:
+        return MODERATOR_SIDEBAR_ITEMS;
+
+      default:
+        return;
+    }
+  }, [user]);
+  console.log({ userRole });
+
   return (
     <Sidebar
       collapsible='offcanvas'
@@ -92,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className='w-full flex justify-between items-center'>
                 <a
                   className='flex items-center shrink-0'
-                  href='#'
+                  href='/'
                 >
                   <span className='text-base font-semibold'>
                     Admin Dashboard
@@ -105,14 +76,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={userRole?.navMain!} />
         <NavSecondary
-          items={data.navSecondary}
+          items={userRole?.navSecondary!}
           className='mt-auto'
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

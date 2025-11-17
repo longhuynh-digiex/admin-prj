@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import {
+  NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_TOKEN_REFRESH_IN_MINUTES,
+} from "@/constant/env.constant";
 import { useAuthStore } from "@/store";
 import { isClient, refreshAccessToken } from "@/utils/utils";
 import axios, {
@@ -74,8 +78,7 @@ export class HttpService {
 
         if (
           timeLeftMinutes >= 0 &&
-          timeLeftMinutes <=
-            Number(process.env.NEXT_PUBLIC_TOKEN_REFRESH_IN_MINUTES)
+          timeLeftMinutes <= Number(NEXT_PUBLIC_TOKEN_REFRESH_IN_MINUTES)
         ) {
           if (refreshToken) {
             try {
@@ -148,7 +151,7 @@ export class HttpService {
     }
   };
   constructor(baseURL?: string, skipToken?: boolean) {
-    const finalUrl = baseURL ? baseURL : process.env.NEXT_PUBLIC_API_URL;
+    const finalUrl = baseURL ? baseURL : NEXT_PUBLIC_API_URL;
     this.client = axios.create({
       baseURL: finalUrl,
       headers: {

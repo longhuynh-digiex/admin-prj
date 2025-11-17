@@ -1,7 +1,12 @@
 import { LoginRequestDTO } from "@/dtos/auth/auth.request.dto";
 import { LoginResponseDTO } from "@/dtos/auth/auth.response.dto";
 import { HttpService } from "./http/http.service";
-import { AUTH_BASE_URL, LOGIN_ENDPOINT } from "@/constant/auth.endpoint";
+import {
+  AUTH_BASE_URL,
+  LOGIN_ENDPOINT,
+  LOGOUT_ENDPOINT,
+} from "@/constant/auth.endpoint";
+import { NEXT_PUBLIC_URL } from "@/constant/env.constant";
 
 class AuthServiceBase {
   private client;
@@ -12,10 +17,29 @@ class AuthServiceBase {
   }
 
   public login(body: LoginRequestDTO) {
-    const fullUrl = `${this.basePath}/${LOGIN_ENDPOINT}`;
-    return this.client.post<LoginRequestDTO, LoginResponseDTO>(fullUrl, {
-      ...body,
-    });
+    const fullUrl = `/auth/${LOGIN_ENDPOINT}`;
+    return this.client.post<LoginRequestDTO, LoginResponseDTO>(
+      fullUrl,
+      {
+        ...body,
+      },
+      {
+        baseURL: NEXT_PUBLIC_URL,
+      }
+    );
+  }
+
+  public logout(body: { accessToken?: string; refreshToken?: string }) {
+    const fullUrl = `/auth/${LOGOUT_ENDPOINT}`;
+    return this.client.post(
+      fullUrl,
+      {
+        body,
+      },
+      {
+        baseURL: NEXT_PUBLIC_URL,
+      }
+    );
   }
 }
 

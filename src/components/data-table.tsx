@@ -1,44 +1,17 @@
 "use client";
 
 import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconGripVertical,
   IconLayoutColumns,
 } from "@tabler/icons-react";
 import {
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
-  Row,
-  SortingState,
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -69,52 +42,8 @@ import {
 } from "@/components/ui/table";
 import { TUser } from "@/dtos/user/user.dto";
 
-export function DragHandle({ id }: { id: number }) {
-  const { attributes, listeners } = useSortable({
-    id,
-  });
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      variant='ghost'
-      size='icon'
-      className='text-muted-foreground size-7 hover:bg-transparent'
-    >
-      <IconGripVertical className='text-muted-foreground size-3' />
-      <span className='sr-only'>Drag to reorder</span>
-    </Button>
-  );
-}
-
-function DraggableRow({ row }: { row: Row<TUser> }) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original.id,
-  });
-
-  return (
-    <TableRow
-      data-state={row.getIsSelected() && "selected"}
-      data-dragging={isDragging}
-      ref={setNodeRef}
-      className='relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80'
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      }}
-    >
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-}
-
 export function DataTable({
-  data: initialData,
+  data,
   columns,
   pageIndex,
   pageSize,
@@ -127,77 +56,37 @@ export function DataTable({
   pageSize: number;
   total: number;
   onPageChange?: (pageIndex: number, pageSize: number) => void;
+  onSearch?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  searchValue?: string;
 }) {
-  const [data, setData] = React.useState(() => initialData);
-  const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [pagination, setPagination] = React.useState({
-    pageIndex,
-    pageSize,
-  });
-  const sortableId = React.useId();
-  const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
-  );
-  console.log("hehe", data);
-
-  const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data.map((d) => d.id) || [],
-    [data]
-  );
 
   const table = useReactTable({
     data,
     columns,
     state: {
-      sorting,
       columnVisibility,
-      rowSelection,
-      columnFilters,
-      pagination,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     getRowId: (row) => row.id.toString(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: true,
     rowCount: total,
     autoResetPageIndex: true,
   });
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      setData((data) => {
-        const oldIndex = dataIds.indexOf(active.id);
-        const newIndex = dataIds.indexOf(over.id);
-        return arrayMove(data, oldIndex, newIndex);
-      });
-    }
-  }
 
   return (
     <div
       defaultValue='outline'
       className='w-full flex-col justify-start gap-6'
     >
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between mb-4'>
         <Label
           htmlFor='view-selector'
           className='sr-only'
@@ -247,66 +136,59 @@ export function DataTable({
           </DropdownMenu>
         </div>
       </div>
-      <div
-        // value='outline'
-        className='relative flex flex-col gap-4 overflow-auto'
-      >
+      <div className='relative flex flex-col gap-4 overflow-auto'>
         <div className='overflow-hidden rounded-lg border'>
-          <DndContext
-            collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
-            onDragEnd={handleDragEnd}
-            sensors={sensors}
-            id={sortableId}
-          >
-            <Table>
-              <TableHeader className='bg-muted sticky top-0 z-10'>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead
-                          key={header.id}
-                          colSpan={header.colSpan}
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className='**:data-[slot=table-cell]:first:w-8'>
-                {table.getRowModel().rows?.length ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
+          <Table>
+            <TableHeader className='bg-muted sticky top-0 z-10'>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        colSpan={header.colSpan}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
                   >
-                    {table.getRowModel().rows.map((row) => (
-                      <DraggableRow
-                        key={row.id}
-                        row={row}
-                      />
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
                     ))}
-                  </SortableContext>
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className='h-24 text-center'
-                    >
-                      No results.
-                    </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </DndContext>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className='h-24 text-center'
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
         <div className='flex items-center justify-between px-4'>
           <div className='text-sm font-medium'>Total: {total} row(s)</div>
@@ -322,15 +204,8 @@ export function DataTable({
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
-                  onPageChange &&
-                    onPageChange(
-                      table.getState().pagination.pageIndex,
-                      Number(value)
-                    );
-                  setPagination({
-                    pageIndex: table.getState().pagination.pageIndex,
-                    pageSize: Number(value),
-                  });
+                  table.setPageIndex(0);
+                  onPageChange && onPageChange(0, Number(value));
                 }}
               >
                 <SelectTrigger
@@ -343,7 +218,7 @@ export function DataTable({
                   />
                 </SelectTrigger>
                 <SelectContent side='top'>
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                  {[5, 10, 20].map((pageSize) => (
                     <SelectItem
                       key={pageSize}
                       value={`${pageSize}`}
@@ -362,7 +237,11 @@ export function DataTable({
               <Button
                 variant='outline'
                 className='hidden h-8 w-8 p-0 lg:flex'
-                onClick={() => table.setPageIndex(0)}
+                onClick={() => {
+                  table.setPageIndex(0);
+                  onPageChange &&
+                    onPageChange(0, table.getState().pagination.pageSize);
+                }}
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className='sr-only'>Go to first page</span>
@@ -372,7 +251,17 @@ export function DataTable({
                 variant='outline'
                 className='size-8'
                 size='icon'
-                onClick={() => table.previousPage()}
+                onClick={() => {
+                  const newPageIndex =
+                    table.getState().pagination.pageIndex - 1;
+                  table.previousPage();
+
+                  onPageChange &&
+                    onPageChange(
+                      newPageIndex,
+                      table.getState().pagination.pageSize
+                    );
+                }}
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className='sr-only'>Go to previous page</span>
@@ -382,7 +271,16 @@ export function DataTable({
                 variant='outline'
                 className='size-8'
                 size='icon'
-                onClick={() => table.nextPage()}
+                onClick={() => {
+                  const newPageIndex =
+                    table.getState().pagination.pageIndex + 1;
+                  table.nextPage();
+                  onPageChange &&
+                    onPageChange(
+                      newPageIndex,
+                      table.getState().pagination.pageSize
+                    );
+                }}
                 disabled={!table.getCanNextPage()}
               >
                 <span className='sr-only'>Go to next page</span>
@@ -392,7 +290,15 @@ export function DataTable({
                 variant='outline'
                 className='hidden size-8 lg:flex'
                 size='icon'
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                onClick={() => {
+                  const lastPage = table.getPageCount() - 1;
+                  table.setPageIndex(lastPage);
+                  onPageChange &&
+                    onPageChange(
+                      lastPage,
+                      table.getState().pagination.pageSize
+                    );
+                }}
                 disabled={!table.getCanNextPage()}
               >
                 <span className='sr-only'>Go to last page</span>
@@ -405,126 +311,3 @@ export function DataTable({
     </div>
   );
 }
-
-// function TableCellViewer({ item }: { item: TUser }) {
-//   const isMobile = useIsMobile();
-
-//   return (
-//     <Drawer direction={isMobile ? "bottom" : "right"}>
-//       <DrawerTrigger asChild>
-//         <Button
-//           variant='link'
-//           className='text-foreground w-fit px-0 text-left'
-//         >
-//           {item.username}
-//         </Button>
-//       </DrawerTrigger>
-//       <DrawerContent>
-//         <DrawerHeader className='gap-1'>
-//           <DrawerTitle>{item.username}</DrawerTitle>
-//           <DrawerDescription>
-//             Showing total visitors for the last 6 months
-//           </DrawerDescription>
-//         </DrawerHeader>
-//         <div className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
-//           <form className='flex flex-col gap-4'>
-//             <div className='flex flex-col gap-3'>
-//               <Label htmlFor='header'>Header</Label>
-//               <Input
-//                 id='header'
-//                 defaultValue={item.header}
-//               />
-//             </div>
-//             <div className='grid grid-cols-2 gap-4'>
-//               <div className='flex flex-col gap-3'>
-//                 <Label htmlFor='type'>Type</Label>
-//                 <Select defaultValue={item.type}>
-//                   <SelectTrigger
-//                     id='type'
-//                     className='w-full'
-//                   >
-//                     <SelectValue placeholder='Select a type' />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     <SelectItem value='Table of Contents'>
-//                       Table of Contents
-//                     </SelectItem>
-//                     <SelectItem value='Executive Summary'>
-//                       Executive Summary
-//                     </SelectItem>
-//                     <SelectItem value='Technical Approach'>
-//                       Technical Approach
-//                     </SelectItem>
-//                     <SelectItem value='Design'>Design</SelectItem>
-//                     <SelectItem value='Capabilities'>Capabilities</SelectItem>
-//                     <SelectItem value='Focus Documents'>
-//                       Focus Documents
-//                     </SelectItem>
-//                     <SelectItem value='Narrative'>Narrative</SelectItem>
-//                     <SelectItem value='Cover Page'>Cover Page</SelectItem>
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-//               <div className='flex flex-col gap-3'>
-//                 <Label htmlFor='status'>Status</Label>
-//                 <Select defaultValue={item.status}>
-//                   <SelectTrigger
-//                     id='status'
-//                     className='w-full'
-//                   >
-//                     <SelectValue placeholder='Select a status' />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     <SelectItem value='Done'>Done</SelectItem>
-//                     <SelectItem value='In Progress'>In Progress</SelectItem>
-//                     <SelectItem value='Not Started'>Not Started</SelectItem>
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-//             </div>
-//             <div className='grid grid-cols-2 gap-4'>
-//               <div className='flex flex-col gap-3'>
-//                 <Label htmlFor='target'>Target</Label>
-//                 <Input
-//                   id='target'
-//                   defaultValue={item.target}
-//                 />
-//               </div>
-//               <div className='flex flex-col gap-3'>
-//                 <Label htmlFor='limit'>Limit</Label>
-//                 <Input
-//                   id='limit'
-//                   defaultValue={item.limit}
-//                 />
-//               </div>
-//             </div>
-//             <div className='flex flex-col gap-3'>
-//               <Label htmlFor='reviewer'>Reviewer</Label>
-//               <Select defaultValue={item.reviewer}>
-//                 <SelectTrigger
-//                   id='reviewer'
-//                   className='w-full'
-//                 >
-//                   <SelectValue placeholder='Select a reviewer' />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   <SelectItem value='Eddie Lake'>Eddie Lake</SelectItem>
-//                   <SelectItem value='Jamik Tashpulatov'>
-//                     Jamik Tashpulatov
-//                   </SelectItem>
-//                   <SelectItem value='Emily Whalen'>Emily Whalen</SelectItem>
-//                 </SelectContent>
-//               </Select>
-//             </div>
-//           </form>
-//         </div>
-//         <DrawerFooter>
-//           <Button>Submit</Button>
-//           <DrawerClose asChild>
-//             <Button variant='outline'>Done</Button>
-//           </DrawerClose>
-//         </DrawerFooter>
-//       </DrawerContent>
-//     </Drawer>
-//   );
-// }
